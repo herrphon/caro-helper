@@ -194,7 +194,7 @@ function FolderNode({
   onPick: (r: { id: number; name: string }, kind: GridKind) => void
   chosen: SheetAlias[]
 }) {
-  const [open, setOpen] = useState(depth === 0)
+  const [open, setOpen] = useState(false)
   const hasChildren =
     (node.sheets?.length ?? 0) + (node.reports?.length ?? 0) + (node.folders?.length ?? 0) > 0
   const items: { ref: { id: number; name: string }; kind: GridKind }[] = [
