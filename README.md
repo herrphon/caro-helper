@@ -3,6 +3,9 @@
 Single-exe Windows helper that reads Smartsheet sheets and reports through the REST API and
 shows it in a local web UI (search, sort, copy to Excel).
 
+Docs: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (decisions, components, API, security, roadmap),
+[docs/smartsheet-layout.md](docs/smartsheet-layout.md) (Smartsheet structure, generated).
+
 ## Using it (Windows laptop)
 
 1. Copy `carohelper.exe` anywhere (e.g. Desktop). Double-click it.
@@ -10,9 +13,17 @@ shows it in a local web UI (search, sort, copy to Excel).
    `http://127.0.0.1:8765`. Close the console to stop.
 2. First run: go to **Settings**, paste a Smartsheet token
    (Smartsheet: Account -> Personal Settings -> API Access -> Generate).
-   The token is stored DPAPI-encrypted in `%APPDATA%\CaroHelper\config.json`.
+   The token is checked against Smartsheet, then stored DPAPI-encrypted in
+   `%APPDATA%\CaroHelper\config.json`.
 3. **Browse workspaces**, add the sheets or reports you need, give them short names,
    **Save sheets**. They appear in the sidebar.
+4. Click one: all rows load; the search box filters live across all columns
+   (several words = AND), click a header to sort, **Copy for Excel** puts the
+   visible rows on the clipboard as tab-separated text. **Dark mode** toggle is
+   at the bottom of the sidebar.
+
+Starting point for Caro: `2026 ESC Workspace - BI BC` -> `LEAN MedChem` ->
+add `VERS`, `UFP`, `Forecast`.
 
 Flags: `-port 9000`, `-no-browser`, `-config path\to\config.json`.
 
@@ -27,6 +38,7 @@ cp .env.example .env            # put SMARTSHEET_TOKEN in it (dev only)
 make explore                    # docs/smartsheet-layout.md, structure only
 make build-win                  # dist/carohelper.exe
 make build                      # native binary for local testing
+go test ./...                   # unit tests
 cd frontend && npm run dev      # UI with hot reload; run `go run ./cmd/carohelper -no-browser` alongside
 ```
 
