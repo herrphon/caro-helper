@@ -1,0 +1,15 @@
+# secrets
+.env
+*.token
+
+# build output
+/dist/
+/frontend/dist/
+/cmd/carohelper/dist/
+/frontend/node_modules/
+*.exe
+
+# editor / os
+.DS_Store
+.idea/
+.vscode/
