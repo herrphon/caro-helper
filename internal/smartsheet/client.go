@@ -161,19 +161,21 @@ func (c *Client) GetWorkspace(ctx context.Context, id int64) (*Workspace, error)
 // --- Sheets -------------------------------------------------------------
 
 type Column struct {
-	ID      int64    `json:"id"`
-	Index   int      `json:"index"`
-	Title   string   `json:"title"`
-	Type    string   `json:"type"`
-	Primary bool     `json:"primary"`
-	Hidden  bool     `json:"hidden"`
-	Options []string `json:"options,omitempty"`
+	ID        int64    `json:"id"`
+	VirtualID int64    `json:"virtualId,omitempty"` // reports only
+	Index     int      `json:"index"`
+	Title     string   `json:"title"`
+	Type      string   `json:"type"`
+	Primary   bool     `json:"primary"`
+	Hidden    bool     `json:"hidden"`
+	Options   []string `json:"options,omitempty"`
 }
 
 type Cell struct {
-	ColumnID     int64  `json:"columnId"`
-	Value        any    `json:"value,omitempty"`
-	DisplayValue string `json:"displayValue,omitempty"`
+	ColumnID        int64  `json:"columnId"`
+	VirtualColumnID int64  `json:"virtualColumnId,omitempty"` // reports only
+	Value           any    `json:"value,omitempty"`
+	DisplayValue    string `json:"displayValue,omitempty"`
 }
 
 type Row struct {
@@ -183,26 +185,54 @@ type Row struct {
 }
 
 type Sheet struct {
-	ID         int64    `json:"id"`
-	Name       string   `json:"name"`
-	Permalink  string   `json:"permalink"`
-	TotalRows  int      `json:"totalRowCount"`
-	ModifiedAt string   `json:"modifiedAt"`
-	Columns    []Column `json:"columns"`
-	Rows       []Row    `json:"rows"`
-	Version    int      `json:"version"`
+	ID           int64     `json:"id"`
+	Name         string    `json:"name"`
+	Permalink    string    `json:"permalink"`
+	TotalRows    int       `json:"totalRowCount"`
+	ModifiedAt   string    `json:"modifiedAt"`
+	Columns      []Column  `json:"columns"`
+	Rows         []Row     `json:"rows"`
+	Version      int       `json:"version"`
+	SourceSheets []ItemRef `json:"sourceSheets,omitempty"` // reports only
 }
 
 // GetSheet fetches the whole sheet. Set withRows=false for structure only.
 func (c *Client) GetSheet(ctx context.Context, id int64, withRows bool) (*Sheet, error) {
+	return c.getGrid(ctx, "/sheets/", id, withRows)
+}
+
+// GetReport fetches a report. Reports share the sheet shape and additionally
+// carry SourceSheets. Report columns have virtualId; we normalise it to ID.
+func (c *Client) GetReport(ctx context.Context, id int64, withRows bool) (*Sheet, error) {
+	return c.getGrid(ctx, "/reports/", id, withRows)
+}
+
+func (c *Client) getGrid(ctx context.Context, prefix string, id int64, withRows bool) (*Sheet, error) {
 	q := url.Values{"pageSize": {"10000"}}
 	if !withRows {
 		q.Set("pageSize", "1")
 	}
 	var s Sheet
-	err := c.get(ctx, "/sheets/"+strconv.FormatInt(id, 10), q, &s)
+	err := c.get(ctx, prefix+strconv.FormatInt(id, 10), q, &s)
 	if err != nil {
 		return nil, err
+	}
+	// Reports: columns carry only virtualId, cells carry columnId (source
+	// sheet) and virtualColumnId. Normalise everything onto the virtual id.
+	if prefix == "/reports/" {
+		for i := range s.Columns {
+			if s.Columns[i].VirtualID != 0 {
+				s.Columns[i].ID = s.Columns[i].VirtualID
+			}
+		}
+		for ri := range s.Rows {
+			for ci := range s.Rows[ri].Cells {
+				cell := &s.Rows[ri].Cells[ci]
+				if cell.VirtualColumnID != 0 {
+					cell.ColumnID = cell.VirtualColumnID
+				}
+			}
+		}
 	}
 	if !withRows {
 		s.Rows = nil

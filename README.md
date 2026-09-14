@@ -1,6 +1,6 @@
 # Caro Helper
 
-Single-exe Windows helper that reads Smartsheet data through the REST API and
+Single-exe Windows helper that reads Smartsheet sheets and reports through the REST API and
 shows it in a local web UI (search, sort, copy to Excel).
 
 ## Using it (Windows laptop)
@@ -11,7 +11,7 @@ shows it in a local web UI (search, sort, copy to Excel).
 2. First run: go to **Settings**, paste a Smartsheet token
    (Smartsheet: Account -> Personal Settings -> API Access -> Generate).
    The token is stored DPAPI-encrypted in `%APPDATA%\CaroHelper\config.json`.
-3. **Browse workspaces**, add the sheets you need, give them short names,
+3. **Browse workspaces**, add the sheets or reports you need, give them short names,
    **Save sheets**. They appear in the sidebar.
 
 Flags: `-port 9000`, `-no-browser`, `-config path\to\config.json`.

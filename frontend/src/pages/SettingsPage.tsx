@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { api, type Folder, type SheetAlias, type Status, type Workspace } from "@/lib/api"
+import { api, type Folder, type GridKind, type SheetAlias, type Status, type Workspace } from "@/lib/api"
 
 type Props = {
   status: Status | null
@@ -112,9 +112,9 @@ function SheetsCard({
     }
   }
 
-  function add(ref: { id: number; name: string }) {
+  function add(ref: { id: number; name: string }, kind: GridKind) {
     if (draft.some((s) => s.sheetId === ref.id)) return
-    setDraft([...draft, { alias: ref.name, sheetId: ref.id }])
+    setDraft([...draft, { alias: ref.name, kind, sheetId: ref.id }])
   }
 
   async function save() {
@@ -150,6 +150,7 @@ function SheetsCard({
                 setDraft(next)
               }}
             />
+            <Badge variant="outline" className="shrink-0">{s.kind}</Badge>
             <code className="text-muted-foreground shrink-0 text-xs">{s.sheetId}</code>
             <Button
               variant="ghost"
@@ -190,11 +191,16 @@ function FolderNode({
 }: {
   node: Folder
   depth: number
-  onPick: (r: { id: number; name: string }) => void
+  onPick: (r: { id: number; name: string }, kind: GridKind) => void
   chosen: SheetAlias[]
 }) {
   const [open, setOpen] = useState(depth === 0)
-  const hasChildren = (node.sheets?.length ?? 0) + (node.folders?.length ?? 0) > 0
+  const hasChildren =
+    (node.sheets?.length ?? 0) + (node.reports?.length ?? 0) + (node.folders?.length ?? 0) > 0
+  const items: { ref: { id: number; name: string }; kind: GridKind }[] = [
+    ...(node.sheets ?? []).map((ref) => ({ ref, kind: "sheet" as GridKind })),
+    ...(node.reports ?? []).map((ref) => ({ ref, kind: "report" as GridKind })),
+  ]
   return (
     <div style={{ paddingLeft: depth * 12 }}>
       <button
@@ -207,15 +213,15 @@ function FolderNode({
       </button>
       {open && (
         <div>
-          {node.sheets?.map((s) => {
-            const picked = chosen.some((c) => c.sheetId === s.id)
+          {items.map(({ ref, kind }) => {
+            const picked = chosen.some((c) => c.sheetId === ref.id)
             return (
-              <div
-                key={s.id}
-                className="flex items-center justify-between gap-2 py-0.5 pl-5"
-              >
-                <span className={picked ? "text-muted-foreground" : ""}>{s.name}</span>
-                <Button size="sm" variant="ghost" disabled={picked} onClick={() => onPick(s)}>
+              <div key={ref.id} className="flex items-center justify-between gap-2 py-0.5 pl-5">
+                <span className={picked ? "text-muted-foreground" : ""}>
+                  {ref.name}{" "}
+                  <span className="text-muted-foreground text-xs">{kind}</span>
+                </span>
+                <Button size="sm" variant="ghost" disabled={picked} onClick={() => onPick(ref, kind)}>
                   {picked ? "added" : "add"}
                 </Button>
               </div>

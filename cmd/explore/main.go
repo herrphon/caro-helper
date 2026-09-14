@@ -22,6 +22,8 @@ import (
 func main() {
 	wsFilter := flag.String("workspace", "", "only workspaces whose name contains this (case-insensitive)")
 	sheetID := flag.Int64("sheet", 0, "dump only this sheet's columns")
+	reportID := flag.Int64("report", 0, "dump only this report's columns")
+	reports := flag.Bool("reports", false, "also fetch report columns (slower)")
 	noCols := flag.Bool("no-columns", false, "skip per-sheet column fetch (faster)")
 	flag.Parse()
 
@@ -36,7 +38,11 @@ func main() {
 	fmt.Printf("# Smartsheet layout\n\nGenerated %s. Structure only, no row data.\n\n", time.Now().Format("2006-01-02"))
 
 	if *sheetID != 0 {
-		printSheet(ctx, c, *sheetID, 0)
+		printGrid(ctx, c, *sheetID, false, 0)
+		return
+	}
+	if *reportID != 0 {
+		printGrid(ctx, c, *reportID, true, 0)
 		return
 	}
 
@@ -54,20 +60,23 @@ func main() {
 			continue
 		}
 		fmt.Printf("## Workspace: %s\n\n- id: `%d`\n\n", ws.Name, ws.ID)
-		printFolder(ctx, c, &ws.Folder, 0, !*noCols)
+		printFolder(ctx, c, &ws.Folder, 0, !*noCols, *reports)
 	}
 }
 
-func printFolder(ctx context.Context, c *smartsheet.Client, f *smartsheet.Folder, depth int, withCols bool) {
+func printFolder(ctx context.Context, c *smartsheet.Client, f *smartsheet.Folder, depth int, withCols, withReports bool) {
 	ind := strings.Repeat("  ", depth)
 	for _, s := range f.Sheets {
 		fmt.Printf("%s- Sheet **%s** (id `%d`)\n", ind, s.Name, s.ID)
 		if withCols {
-			printSheet(ctx, c, s.ID, depth+1)
+			printGrid(ctx, c, s.ID, false, depth+1)
 		}
 	}
 	for _, r := range f.Reports {
 		fmt.Printf("%s- Report *%s* (id `%d`)\n", ind, r.Name, r.ID)
+		if withCols && withReports {
+			printGrid(ctx, c, r.ID, true, depth+1)
+		}
 	}
 	for _, d := range f.Sights {
 		fmt.Printf("%s- Dashboard *%s* (id `%d`)\n", ind, d.Name, d.ID)
@@ -75,22 +84,35 @@ func printFolder(ctx context.Context, c *smartsheet.Client, f *smartsheet.Folder
 	for i := range f.Folders {
 		sub := &f.Folders[i]
 		fmt.Printf("%s- Folder **%s/** (id `%d`)\n", ind, sub.Name, sub.ID)
-		printFolder(ctx, c, sub, depth+1, withCols)
+		printFolder(ctx, c, sub, depth+1, withCols, withReports)
 	}
 	if depth == 0 {
 		fmt.Println()
 	}
 }
 
-func printSheet(ctx context.Context, c *smartsheet.Client, id int64, depth int) {
+func printGrid(ctx context.Context, c *smartsheet.Client, id int64, isReport bool, depth int) {
 	ind := strings.Repeat("  ", depth)
-	s, err := c.GetSheet(ctx, id, false)
+	var s *smartsheet.Sheet
+	var err error
+	if isReport {
+		s, err = c.GetReport(ctx, id, false)
+	} else {
+		s, err = c.GetSheet(ctx, id, false)
+	}
 	if err != nil {
-		warn("sheet %d: %v", id, err)
+		warn("grid %d: %v", id, err)
 		fmt.Printf("%s- (error: %v)\n", ind, err)
 		return
 	}
 	fmt.Printf("%s- rows: %d, modified: %s\n", ind, s.TotalRows, s.ModifiedAt)
+	if len(s.SourceSheets) > 0 {
+		names := make([]string, 0, len(s.SourceSheets))
+		for _, ss := range s.SourceSheets {
+			names = append(names, fmt.Sprintf("%s (`%d`)", ss.Name, ss.ID))
+		}
+		fmt.Printf("%s- source sheets: %s\n", ind, strings.Join(names, ", "))
+	}
 	fmt.Printf("%s- columns:\n", ind)
 	for _, col := range s.Columns {
 		flags := ""

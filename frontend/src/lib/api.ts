@@ -6,7 +6,8 @@ export type Status = {
   tokenError?: string
 }
 
-export type SheetAlias = { alias: string; sheetId: number }
+export type GridKind = "sheet" | "report"
+export type SheetAlias = { alias: string; kind: GridKind; sheetId: number }
 
 export type Column = {
   id: number
@@ -63,6 +64,6 @@ export const api = {
   sheets: () => request<SheetAlias[]>("/api/sheets"),
   setSheets: (sheets: SheetAlias[]) =>
     request<SheetAlias[]>("/api/sheets", { method: "PUT", body: JSON.stringify(sheets) }),
-  sheet: (id: number) => request<SheetView>(`/api/sheets/${id}`),
+  grid: (kind: GridKind, id: number) => request<SheetView>(`/api/grid/${kind}/${id}`),
   browse: () => request<Workspace[]>("/api/browse"),
 }

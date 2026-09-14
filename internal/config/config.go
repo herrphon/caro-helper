@@ -21,9 +21,10 @@ const (
 // different platform/user and cannot be recovered; the user must re-enter it.
 var errNotDecryptable = errors.New("stored token cannot be decrypted on this machine; please enter it again")
 
-// SheetAlias maps a human name to a Smartsheet sheet id.
+// SheetAlias maps a human name to a Smartsheet sheet or report id.
 type SheetAlias struct {
 	Alias   string `json:"alias"`
+	Kind    string `json:"kind"` // "sheet" (default) or "report"
 	SheetID int64  `json:"sheetId"`
 }
 
@@ -72,6 +73,11 @@ func Load(path string) (*Store, error) {
 	}
 	if s.cfg.Sheets == nil {
 		s.cfg.Sheets = []SheetAlias{}
+	}
+	for i := range s.cfg.Sheets {
+		if s.cfg.Sheets[i].Kind == "" {
+			s.cfg.Sheets[i].Kind = "sheet"
+		}
 	}
 	if s.cfg.Port == 0 {
 		s.cfg.Port = 8765

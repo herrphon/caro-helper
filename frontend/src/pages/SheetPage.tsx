@@ -26,7 +26,7 @@ export function SheetPage({ alias }: { alias: SheetAlias }) {
     setLoading(true)
     setErr(null)
     try {
-      setSheet(await api.sheet(alias.sheetId))
+      setSheet(await api.grid(alias.kind, alias.sheetId))
     } catch (e) {
       setErr((e as Error).message)
     } finally {
@@ -90,6 +90,7 @@ export function SheetPage({ alias }: { alias: SheetAlias }) {
     <div className="flex h-full flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-xl font-semibold">{alias.alias}</h1>
+        <Badge variant="outline">{alias.kind}</Badge>
         {sheet && (
           <>
             <Badge variant="secondary">

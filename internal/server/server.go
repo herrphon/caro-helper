@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"carohelper/internal/config"
@@ -42,7 +43,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("PUT /api/token", s.handleSetToken)
 	s.mux.HandleFunc("GET /api/sheets", s.handleListSheets)
 	s.mux.HandleFunc("PUT /api/sheets", s.handleSetSheets)
-	s.mux.HandleFunc("GET /api/sheets/{id}", s.handleGetSheet)
+	s.mux.HandleFunc("GET /api/grid/{kind}/{id}", s.handleGetGrid)
 	s.mux.HandleFunc("GET /api/browse", s.handleBrowse)
 	s.mux.Handle("/", spaHandler(s.static))
 }
@@ -142,9 +143,15 @@ func (s *Server) handleSetSheets(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	for _, sh := range sheets {
+	for i, sh := range sheets {
 		if strings.TrimSpace(sh.Alias) == "" || sh.SheetID == 0 {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "each sheet needs alias and sheetId"})
+			return
+		}
+		if sh.Kind == "" {
+			sheets[i].Kind = "sheet"
+		} else if sh.Kind != "sheet" && sh.Kind != "report" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "kind must be sheet or report"})
 			return
 		}
 	}
@@ -173,10 +180,15 @@ type RowView struct {
 	Cells     map[string]string `json:"cells"` // columnId -> display value
 }
 
-func (s *Server) handleGetSheet(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleGetGrid(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad sheet id"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "bad id"})
+		return
+	}
+	kind := r.PathValue("kind")
+	if kind != "sheet" && kind != "report" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "kind must be sheet or report"})
 		return
 	}
 	c, err := s.client()
@@ -184,7 +196,12 @@ func (s *Server) handleGetSheet(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, err)
 		return
 	}
-	sheet, err := c.GetSheet(r.Context(), id, true)
+	var sheet *smartsheet.Sheet
+	if kind == "report" {
+		sheet, err = c.GetReport(r.Context(), id, true)
+	} else {
+		sheet, err = c.GetSheet(r.Context(), id, true)
+	}
 	if err != nil {
 		writeErr(w, err)
 		return
@@ -232,16 +249,31 @@ func (s *Server) handleBrowse(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, err)
 		return
 	}
-	out := make([]*smartsheet.Workspace, 0, len(refs))
-	for _, ref := range refs {
-		ws, err := c.GetWorkspace(r.Context(), ref.ID)
-		if err != nil {
-			log.Printf("warn: workspace %q: %v", ref.Name, err)
-			continue
-		}
-		out = append(out, ws)
+	out := make([]*smartsheet.Workspace, len(refs))
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 4) // stay well under Smartsheet's rate limit
+	for i, ref := range refs {
+		wg.Add(1)
+		go func(i int, ref smartsheet.ItemRef) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			ws, err := c.GetWorkspace(r.Context(), ref.ID)
+			if err != nil {
+				log.Printf("warn: workspace %q: %v", ref.Name, err)
+				return
+			}
+			out[i] = ws
+		}(i, ref)
 	}
-	writeJSON(w, http.StatusOK, out)
+	wg.Wait()
+	result := make([]*smartsheet.Workspace, 0, len(out))
+	for _, ws := range out {
+		if ws != nil {
+			result = append(result, ws)
+		}
+	}
+	writeJSON(w, http.StatusOK, result)
 }
 
 // spaHandler serves static files and falls back to index.html.
