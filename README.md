@@ -4,7 +4,8 @@ Single-exe Windows helper that reads Smartsheet sheets and reports through the R
 shows it in a local web UI (search, sort, copy to Excel).
 
 Docs: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (decisions, components, API, security, roadmap),
-[docs/smartsheet-layout.md](docs/smartsheet-layout.md) (Smartsheet structure, generated).
+[docs/smartsheet-layout.md](docs/smartsheet-layout.md) (Smartsheet structure, generated),
+[docs/architecture.html](docs/architecture.html) (interactive diagram; source `docs/architecture.diagram.json`).
 
 ## Using it (Windows laptop)
 

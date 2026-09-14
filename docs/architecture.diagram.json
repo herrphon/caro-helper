@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Caro Helper - Architecture",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "viewBox": [
+      1360,
+      680
+    ],
+    "views": [
+      {
+        "id": "read-path",
+        "label": "Read path",
+        "focus": [
+          "browser",
+          "server",
+          "client",
+          "smartsheet"
+        ],
+        "note": "One click in the SPA becomes one authenticated GET against the Smartsheet API; the whole grid comes back and is filtered in the browser."
+      },
+      {
+        "id": "settings",
+        "label": "Settings and secrets",
+        "focus": [
+          "browser",
+          "server",
+          "config",
+          "dpapi"
+        ],
+        "note": "The token is verified against /users/me, then stored DPAPI-encrypted for the current Windows user only."
+      },
+      {
+        "id": "dev-tools",
+        "label": "Developer tooling",
+        "focus": [
+          "explore",
+          "dotenv",
+          "client",
+          "smartsheet",
+          "layout"
+        ],
+        "note": "The explore tool runs only on the developer machine and writes structure, never row data."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Edge browser",
+      "sublabel": "React SPA (shadcn/ui)",
+      "pos": [
+        40,
+        240
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "server",
+      "type": "backend",
+      "label": "internal/server",
+      "sublabel": "JSON API + embedded SPA",
+      "pos": [
+        380,
+        240
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "client",
+      "type": "backend",
+      "label": "internal/smartsheet",
+      "sublabel": "REST client, Bearer token",
+      "pos": [
+        740,
+        240
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "config",
+      "type": "database",
+      "label": "config.json",
+      "sublabel": "%APPDATA%\\CaroHelper",
+      "pos": [
+        380,
+        460
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "dpapi",
+      "type": "security",
+      "label": "Windows DPAPI",
+      "sublabel": "user-bound encryption",
+      "pos": [
+        40,
+        460
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "smartsheet",
+      "type": "external",
+      "label": "api.smartsheet.com",
+      "sublabel": "sheets, reports, workspaces",
+      "pos": [
+        1120,
+        240
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "explore",
+      "type": "backend",
+      "label": "cmd/explore",
+      "sublabel": "dev tool (macOS)",
+      "pos": [
+        740,
+        60
+      ],
+      "size": [
+        190,
+        60
+      ]
+    },
+    {
+      "id": "dotenv",
+      "type": "security",
+      "label": ".env",
+      "sublabel": "SMARTSHEET_TOKEN, gitignored",
+      "pos": [
+        380,
+        60
+      ],
+      "size": [
+        180,
+        60
+      ]
+    },
+    {
+      "id": "layout",
+      "type": "database",
+      "label": "smartsheet-layout.md",
+      "sublabel": "structure only",
+      "pos": [
+        1120,
+        60
+      ],
+      "size": [
+        190,
+        60
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "carohelper.exe (127.0.0.1:8765)",
+      "wraps": [
+        "server",
+        "client",
+        "config"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "Developer machine only",
+      "wraps": [
+        "explore",
+        "dotenv",
+        "layout"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "spa-api",
+      "from": "browser",
+      "to": "server",
+      "label": "REST /api/*",
+      "variant": "emphasis"
+    },
+    {
+      "id": "server-client",
+      "from": "server",
+      "to": "client",
+      "label": "GetSheet / GetReport"
+    },
+    {
+      "id": "client-api",
+      "from": "client",
+      "to": "smartsheet",
+      "label": "HTTPS GET, Edge UA",
+      "variant": "emphasis"
+    },
+    {
+      "id": "server-config",
+      "from": "server",
+      "to": "config",
+      "label": "aliases, token",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 60
+    },
+    {
+      "id": "config-dpapi",
+      "from": "config",
+      "to": "dpapi",
+      "label": "protect / unprotect",
+      "variant": "security"
+    },
+    {
+      "id": "explore-env",
+      "from": "dotenv",
+      "to": "explore",
+      "label": "token",
+      "variant": "dashed"
+    },
+    {
+      "id": "explore-client",
+      "from": "explore",
+      "to": "client",
+      "label": "reuses client",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 50
+    },
+    {
+      "id": "explore-layout",
+      "from": "explore",
+      "to": "layout",
+      "label": "writes",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Runtime",
+      "items": [
+        "Single 8 MB Go exe, no installer",
+        "Loopback HTTP server, opens the browser",
+        "Console window = logs and stop"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Data",
+      "items": [
+        "Sheets and Reports fetched whole on click",
+        "Filter, sort, copy-to-Excel in the browser",
+        "Read-only against Smartsheet"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Secrets",
+      "items": [
+        "Token verified before storing",
+        "DPAPI-encrypted, per Windows user",
+        ".env only on the dev machine"
+      ]
+    }
+  ]
+}
