@@ -79,7 +79,11 @@ func (s *Server) client() (*smartsheet.Client, error) {
 	if tok == "" {
 		return nil, errors.New("no Smartsheet token configured")
 	}
-	return smartsheet.New(tok), nil
+	c := smartsheet.New(tok)
+	if ua := s.cfg.UserAgent(); ua != "" {
+		c.UserAgent = ua
+	}
+	return c, nil
 }
 
 // --- handlers -----------------------------------------------------------
@@ -120,7 +124,11 @@ func (s *Server) handleSetToken(w http.ResponseWriter, r *http.Request) {
 	// verify before storing
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
-	me, err := smartsheet.New(tok).Me(ctx)
+	probe := smartsheet.New(tok)
+	if ua := s.cfg.UserAgent(); ua != "" {
+		probe.UserAgent = ua
+	}
+	me, err := probe.Me(ctx)
 	if err != nil {
 		writeErr(w, fmt.Errorf("token rejected by Smartsheet: %w", err))
 		return

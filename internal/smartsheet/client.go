@@ -17,10 +17,16 @@ import (
 
 const DefaultBaseURL = "https://api.smartsheet.com/2.0"
 
+// DefaultUserAgent mimics the current Microsoft Edge on Windows 10/11.
+// Chromium froze most of the UA string; only the major version moves.
+// Override via "userAgent" in config.json without rebuilding.
+const DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0"
+
 type Client struct {
-	BaseURL string
-	Token   string
-	HTTP    *http.Client
+	BaseURL   string
+	Token     string
+	UserAgent string
+	HTTP      *http.Client
 }
 
 func New(token string) *Client {
@@ -29,9 +35,10 @@ func New(token string) *Client {
 		base = v
 	}
 	return &Client{
-		BaseURL: base,
-		Token:   token,
-		HTTP:    &http.Client{Timeout: 60 * time.Second},
+		BaseURL:   base,
+		UserAgent: DefaultUserAgent,
+		Token:     token,
+		HTTP:      &http.Client{Timeout: 60 * time.Second},
 	}
 }
 
@@ -57,6 +64,7 @@ func (c *Client) get(ctx context.Context, path string, query url.Values, out any
 	}
 	req.Header.Set("Authorization", "Bearer "+c.Token)
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", c.UserAgent)
 
 	resp, err := c.HTTP.Do(req)
 	if err != nil {

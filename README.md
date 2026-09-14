@@ -16,6 +16,8 @@ shows it in a local web UI (search, sort, copy to Excel).
 
 Flags: `-port 9000`, `-no-browser`, `-config path\to\config.json`.
 
+Optional `config.json` keys: `"port"`, `"userAgent"` (defaults to a current Edge-on-Windows string; bump the version there without rebuilding).
+
 ## Developing (Mac)
 
 Requires Go and Node.

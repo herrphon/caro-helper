@@ -33,6 +33,8 @@ type Config struct {
 	TokenEnc string       `json:"tokenEnc,omitempty"`
 	Sheets   []SheetAlias `json:"sheets"`
 	Port     int          `json:"port,omitempty"`
+	// UserAgent overrides the User-Agent sent to Smartsheet (empty = built-in default).
+	UserAgent string `json:"userAgent,omitempty"`
 }
 
 type Store struct {
@@ -102,6 +104,12 @@ func (s *Store) Port() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.cfg.Port
+}
+
+func (s *Store) UserAgent() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.cfg.UserAgent
 }
 
 func (s *Store) Sheets() []SheetAlias {
