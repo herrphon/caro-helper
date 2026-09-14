@@ -7,6 +7,21 @@ import { SheetPage } from "@/pages/SheetPage"
 
 type Route = { page: "settings" } | { page: "sheet"; sheetId: number }
 
+type Theme = "light" | "dark"
+
+function useTheme(): [Theme, () => void] {
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem("theme")
+    if (saved === "light" || saved === "dark") return saved
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+  })
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark")
+    localStorage.setItem("theme", theme)
+  }, [theme])
+  return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))]
+}
+
 function parseHash(): Route {
   const m = window.location.hash.match(/^#\/sheet\/(\d+)$/)
   if (m) return { page: "sheet", sheetId: Number(m[1]) }
@@ -18,6 +33,7 @@ export default function App() {
   const [sheets, setSheets] = useState<SheetAlias[]>([])
   const [route, setRoute] = useState<Route>(parseHash)
   const [loadErr, setLoadErr] = useState<string | null>(null)
+  const [theme, toggleTheme] = useTheme()
 
   const refresh = useCallback(async () => {
     try {
@@ -76,7 +92,7 @@ export default function App() {
           ))}
         </nav>
         <Separator />
-        <div className="p-2">
+        <div className="flex flex-col gap-0.5 p-2">
           <Button
             variant={route.page === "settings" ? "secondary" : "ghost"}
             className="w-full justify-start"
@@ -84,10 +100,13 @@ export default function App() {
           >
             Settings
           </Button>
+          <Button variant="ghost" className="w-full justify-start" onClick={toggleTheme}>
+            {theme === "dark" ? "Light mode" : "Dark mode"}
+          </Button>
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 overflow-hidden p-6">
+      <main className="min-w-0 flex-1 overflow-auto p-6">
         {loadErr && (
           <p className="text-destructive mb-4">Cannot reach Caro Helper: {loadErr}</p>
         )}
