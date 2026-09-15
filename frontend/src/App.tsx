@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useCallback, useEffect, useState, type ReactNode } from "react"
 import { Separator } from "@/components/ui/separator"
 import { api, type SheetAlias, type Status } from "@/lib/api"
 import { SettingsPage } from "@/pages/SettingsPage"
@@ -65,48 +64,46 @@ export default function App() {
 
   return (
     <div className="bg-background flex h-screen text-sm">
-      <aside className="bg-muted/40 flex w-56 shrink-0 flex-col border-r">
-        <div className="px-4 py-3">
-          <div className="text-base font-semibold">Caro Helper</div>
-          <div className="text-muted-foreground text-xs">
-            {status?.tokenValid ? status.user : "not connected"}
+      <aside className="bg-sidebar text-sidebar-foreground flex w-56 shrink-0 flex-col">
+        <div className="flex items-center gap-2 px-4 py-3">
+          <span className="bg-sidebar-primary inline-block size-6 shrink-0 rounded-sm" aria-hidden />
+          <div className="min-w-0">
+            <div className="text-base font-semibold text-white">Caro Helper</div>
+            <div className="text-sidebar-foreground/70 truncate text-xs" title={status?.user}>
+              {status?.tokenValid ? status.user : "not connected"}
+            </div>
           </div>
         </div>
-        <Separator />
+        <Separator className="bg-sidebar-border" />
         <nav className="flex flex-1 flex-col gap-0.5 overflow-auto p-2">
-          <div className="text-muted-foreground px-2 pb-1 pt-2 text-xs font-medium uppercase">
+          <div className="text-sidebar-foreground/60 px-2 pb-1 pt-2 text-xs font-medium uppercase">
             Sheets
           </div>
           {sheets.length === 0 && (
-            <div className="text-muted-foreground px-2 text-xs">none configured</div>
+            <div className="text-sidebar-foreground/60 px-2 text-xs">none configured</div>
           )}
           {sheets.map((s) => (
-            <Button
+            <NavItem
               key={s.sheetId}
-              variant={current?.sheetId === s.sheetId ? "secondary" : "ghost"}
-              className="justify-start"
+              active={current?.sheetId === s.sheetId}
               onClick={() => (window.location.hash = `#/sheet/${s.sheetId}`)}
             >
-              <span className="truncate">{s.alias}</span>
-            </Button>
+              {s.alias}
+            </NavItem>
           ))}
         </nav>
-        <Separator />
+        <Separator className="bg-sidebar-border" />
         <div className="flex flex-col gap-0.5 p-2">
-          <Button
-            variant={route.page === "settings" ? "secondary" : "ghost"}
-            className="w-full justify-start"
-            onClick={() => (window.location.hash = "#/settings")}
-          >
+          <NavItem active={route.page === "settings"} onClick={() => (window.location.hash = "#/settings")}>
             Settings
-          </Button>
-          <Button variant="ghost" className="w-full justify-start" onClick={toggleTheme}>
+          </NavItem>
+          <NavItem active={false} onClick={toggleTheme}>
             {theme === "dark" ? "Light mode" : "Dark mode"}
-          </Button>
+          </NavItem>
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 overflow-auto p-6">
+      <main className="bg-muted/40 min-w-0 flex-1 overflow-auto p-4">
         {loadErr && (
           <p className="text-destructive mb-4">Cannot reach Caro Helper: {loadErr}</p>
         )}
@@ -117,5 +114,30 @@ export default function App() {
         )}
       </main>
     </div>
+  )
+}
+
+function NavItem({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        "flex w-full items-center rounded-sm border-l-2 px-3 py-1.5 text-left text-sm transition-colors " +
+        (active
+          ? "border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground"
+          : "hover:bg-sidebar-accent/60 border-transparent")
+      }
+    >
+      <span className="truncate">{children}</span>
+    </button>
   )
 }

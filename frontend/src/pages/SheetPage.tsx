@@ -2,14 +2,6 @@ import { useEffect, useMemo, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { api, type Column, type RowView, type SheetAlias, type SheetView } from "@/lib/api"
 
 type Sort = { colId: string; dir: "asc" | "desc" } | null
@@ -128,37 +120,39 @@ export function SheetPage({ alias }: { alias: SheetAlias }) {
       {loading && !sheet && <p className="text-muted-foreground text-sm">Loading sheet...</p>}
 
       {sheet && (
-        <div className="min-h-0 flex-1 overflow-auto rounded-md border">
-          <Table>
-            <TableHeader className="bg-background sticky top-0 z-10">
-              <TableRow>
-                <TableHead className="w-10 text-right">#</TableHead>
+        <div className="min-h-0 flex-1 overflow-auto border bg-background">
+          <table className="ss-grid w-full">
+            <thead className="sticky top-0 z-10">
+              <tr>
+                <th className="ss-rownum"></th>
                 {sheet.columns.map((c) => (
-                  <TableHead
+                  <th
                     key={c.id}
-                    className="cursor-pointer select-none whitespace-nowrap"
+                    className="hover:bg-accent cursor-pointer select-none"
                     onClick={() => toggleSort(String(c.id))}
                     title={c.type}
                   >
                     {c.title}
-                    {sort?.colId === String(c.id) && (sort.dir === "asc" ? " \u2191" : " \u2193")}
-                  </TableHead>
+                    {sort?.colId === String(c.id) && (
+                      <span className="text-primary ml-1">{sort.dir === "asc" ? "\u25B2" : "\u25BC"}</span>
+                    )}
+                  </th>
                 ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+              </tr>
+            </thead>
+            <tbody>
               {rows.map((r) => (
                 <Row key={r.id} row={r} columns={sheet.columns} />
               ))}
               {rows.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={sheet.columns.length + 1} className="text-muted-foreground text-center">
+                <tr>
+                  <td colSpan={sheet.columns.length + 1} className="text-muted-foreground text-center">
                     No rows match.
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               )}
-            </TableBody>
-          </Table>
+            </tbody>
+          </table>
         </div>
       )}
     </div>
@@ -167,13 +161,13 @@ export function SheetPage({ alias }: { alias: SheetAlias }) {
 
 function Row({ row, columns }: { row: RowView; columns: Column[] }) {
   return (
-    <TableRow>
-      <TableCell className="text-muted-foreground text-right text-xs">{row.rowNumber}</TableCell>
+    <tr>
+      <td className="ss-rownum">{row.rowNumber}</td>
       {columns.map((c) => (
-        <TableCell key={c.id} className="max-w-xs truncate" title={row.cells[String(c.id)]}>
+        <td key={c.id} className="max-w-xs truncate" title={row.cells[String(c.id)]}>
           {row.cells[String(c.id)] ?? ""}
-        </TableCell>
+        </td>
       ))}
-    </TableRow>
+    </tr>
   )
 }

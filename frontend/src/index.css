@@ -1,13 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
+    --font-sans: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -55,32 +55,35 @@
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
+    --primary: #0073ec;
+    --primary-foreground: #ffffff;
+    --secondary: #e8f1fc;
+    --secondary-foreground: #0b4f9e;
+    --muted: #f3f3f3;
+    --muted-foreground: #5f6368;
+    --accent: #e8f1fc;
+    --accent-foreground: #0b4f9e;
+    --destructive: #d93025;
+    --border: #d9d9d9;
+    --input: #c8c8c8;
+    --ring: #0073ec;
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --radius: 0.25rem;
+    --sidebar: #12232e;
+    --sidebar-foreground: #dfe6ec;
+    --sidebar-primary: #0073ec;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #1f3648;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #24384a;
+    --sidebar-ring: #0073ec;
+    --grid-header: #f0f0f0;
+    --grid-line: #e1e1e1;
+    --grid-hover: #eef5fd;
 }
 
 .dark {
@@ -90,15 +93,18 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.205 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
+    --primary: #3b8ff0;
+    --primary-foreground: #ffffff;
+    --secondary: #1f3648;
+    --secondary-foreground: #dfe6ec;
     --muted: oklch(0.269 0 0);
     --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
+    --accent: #1f3648;
+    --accent-foreground: #ffffff;
     --destructive: oklch(0.704 0.191 22.216);
+    --grid-header: #262626;
+    --grid-line: #333333;
+    --grid-hover: #1f3648;
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
@@ -107,9 +113,9 @@
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar: #0c1720;
+    --sidebar-foreground: #dfe6ec;
+    --sidebar-primary: #3b8ff0;
     --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.269 0 0);
     --sidebar-accent-foreground: oklch(0.985 0 0);
@@ -127,4 +133,42 @@
   html {
     @apply font-sans;
     }
+}
+/* Smartsheet-like grid */
+.ss-grid {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+.ss-grid th,
+.ss-grid td {
+  border-right: 1px solid var(--grid-line);
+  border-bottom: 1px solid var(--grid-line);
+  padding: 0 8px;
+  height: 30px;
+  white-space: nowrap;
+}
+.ss-grid th {
+  background: var(--grid-header);
+  font-weight: 600;
+  text-align: left;
+  color: var(--foreground);
+}
+.ss-grid th.ss-rownum,
+.ss-grid td.ss-rownum {
+  background: var(--grid-header);
+  color: var(--muted-foreground);
+  text-align: right;
+  width: 44px;
+  min-width: 44px;
+  font-size: 11px;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+.ss-grid tbody tr:hover td {
+  background: var(--grid-hover);
+}
+.ss-grid tbody tr:hover td.ss-rownum {
+  background: var(--grid-hover);
 }
