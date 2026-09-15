@@ -1,10 +1,51 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react"
-import { Separator } from "@/components/ui/separator"
+import { FileSpreadsheet, Grid3x3, Globe, Moon, Settings, ShoppingCart, Sun, Table2 } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { api, type SheetAlias, type Status } from "@/lib/api"
 import { SettingsPage } from "@/pages/SettingsPage"
 import { SheetPage } from "@/pages/SheetPage"
 
-type Route = { page: "settings" } | { page: "sheet"; sheetId: number }
+// --- data sources -------------------------------------------------------
+
+type SourceId = "smartsheet" | "ariba" | "excel" | "webapp1" | "webapp2"
+
+const SOURCES: { id: SourceId; label: string; icon: typeof Grid3x3; ready: boolean }[] = [
+  { id: "smartsheet", label: "Smartsheet", icon: Grid3x3, ready: true },
+  { id: "ariba", label: "SAP Ariba", icon: ShoppingCart, ready: false },
+  { id: "excel", label: "Excel", icon: FileSpreadsheet, ready: false },
+  { id: "webapp1", label: "Web App 1", icon: Globe, ready: false },
+  { id: "webapp2", label: "Web App 2", icon: Globe, ready: false },
+]
+
+// --- routing ------------------------------------------------------------
+
+type Route =
+  | { page: "settings" }
+  | { page: "source"; source: SourceId; sheetId?: number }
+
+function parseHash(): Route {
+  const h = window.location.hash
+  if (h === "#/settings") return { page: "settings" }
+  const m = h.match(/^#\/([a-z0-9]+)(?:\/sheet\/(\d+))?$/)
+  if (m && SOURCES.some((s) => s.id === m[1])) {
+    return { page: "source", source: m[1] as SourceId, sheetId: m[2] ? Number(m[2]) : undefined }
+  }
+  return { page: "source", source: "smartsheet" }
+}
+
+function go(hash: string) {
+  window.location.hash = hash
+}
+
+// --- theme --------------------------------------------------------------
 
 type Theme = "light" | "dark"
 
@@ -21,11 +62,7 @@ function useTheme(): [Theme, () => void] {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))]
 }
 
-function parseHash(): Route {
-  const m = window.location.hash.match(/^#\/sheet\/(\d+)$/)
-  if (m) return { page: "sheet", sheetId: Number(m[1]) }
-  return { page: "settings" }
-}
+// --- app ----------------------------------------------------------------
 
 export default function App() {
   const [status, setStatus] = useState<Status | null>(null)
@@ -52,77 +89,175 @@ export default function App() {
     return () => window.removeEventListener("hashchange", onHash)
   }, [refresh])
 
-  // first run: land on settings; otherwise open first sheet
+  // first run without token -> settings; otherwise land on the first sheet
   useEffect(() => {
-    if (status && status.tokenValid && sheets.length > 0 && !window.location.hash) {
-      window.location.hash = `#/sheet/${sheets[0].sheetId}`
-    }
+    if (!status || window.location.hash) return
+    if (!status.tokenValid) go("#/settings")
+    else if (sheets.length > 0) go(`#/smartsheet/sheet/${sheets[0].sheetId}`)
   }, [status, sheets])
 
+  const activeSource: SourceId = route.page === "source" ? route.source : "smartsheet"
   const current =
-    route.page === "sheet" ? sheets.find((s) => s.sheetId === route.sheetId) : undefined
+    route.page === "source" && route.sheetId !== undefined
+      ? sheets.find((s) => s.sheetId === route.sheetId)
+      : undefined
 
   return (
-    <div className="bg-background flex h-screen text-sm">
-      <aside className="bg-sidebar text-sidebar-foreground flex w-56 shrink-0 flex-col">
-        <div className="flex items-center gap-2 px-4 py-3">
-          <span className="bg-sidebar-primary inline-block size-6 shrink-0 rounded-sm" aria-hidden />
-          <div className="min-w-0">
-            <div className="text-base font-semibold text-white">Caro Helper</div>
-            <div className="text-sidebar-foreground/70 truncate text-xs" title={status?.user}>
-              {status?.tokenValid ? status.user : "not connected"}
-            </div>
-          </div>
-        </div>
-        <Separator className="bg-sidebar-border" />
-        <nav className="flex flex-1 flex-col gap-0.5 overflow-auto p-2">
-          <div className="text-sidebar-foreground/60 px-2 pb-1 pt-2 text-xs font-medium uppercase">
-            Sheets
-          </div>
-          {sheets.length === 0 && (
-            <div className="text-sidebar-foreground/60 px-2 text-xs">none configured</div>
-          )}
-          {sheets.map((s) => (
-            <NavItem
-              key={s.sheetId}
-              active={current?.sheetId === s.sheetId}
-              onClick={() => (window.location.hash = `#/sheet/${s.sheetId}`)}
-            >
-              {s.alias}
-            </NavItem>
-          ))}
-        </nav>
-        <Separator className="bg-sidebar-border" />
-        <div className="flex flex-col gap-0.5 p-2">
-          <NavItem active={route.page === "settings"} onClick={() => (window.location.hash = "#/settings")}>
-            Settings
-          </NavItem>
-          <NavItem active={false} onClick={toggleTheme}>
-            {theme === "dark" ? "Light mode" : "Dark mode"}
-          </NavItem>
-        </div>
-      </aside>
+    <div className="bg-background flex h-screen flex-col text-sm">
+      <TopBar status={status} theme={theme} onToggleTheme={toggleTheme} />
 
-      <main className="bg-muted/40 min-w-0 flex-1 overflow-auto p-4">
-        {loadErr && (
-          <p className="text-destructive mb-4">Cannot reach Caro Helper: {loadErr}</p>
-        )}
-        {route.page === "settings" || !current ? (
-          <SettingsPage status={status} sheets={sheets} onChanged={refresh} />
-        ) : (
-          <SheetPage alias={current} />
-        )}
-      </main>
+      <div className="flex min-h-0 flex-1">
+        <SourceRail active={activeSource} settingsActive={route.page === "settings"} />
+
+        <SheetPanel
+          source={activeSource}
+          sheets={sheets}
+          currentId={current?.sheetId}
+          hidden={route.page === "settings"}
+        />
+
+        <main className="bg-muted/40 min-w-0 flex-1 overflow-auto p-4">
+          {loadErr && <p className="text-destructive mb-4">Cannot reach Caro Helper: {loadErr}</p>}
+          {route.page === "settings" ? (
+            <SettingsPage status={status} sheets={sheets} onChanged={refresh} />
+          ) : activeSource !== "smartsheet" ? (
+            <ComingSoon source={activeSource} />
+          ) : current ? (
+            <SheetPage alias={current} />
+          ) : (
+            <EmptyState hasSheets={sheets.length > 0} />
+          )}
+        </main>
+      </div>
     </div>
   )
 }
 
-function NavItem({
+// --- pieces -------------------------------------------------------------
+
+function TopBar({
+  status,
+  theme,
+  onToggleTheme,
+}: {
+  status: Status | null
+  theme: Theme
+  onToggleTheme: () => void
+}) {
+  const initials = (status?.user ?? "?").slice(0, 2).toUpperCase()
+  return (
+    <header className="bg-sidebar text-sidebar-foreground flex h-12 shrink-0 items-center px-3">
+      <div className="flex items-center gap-2">
+        <span className="bg-sidebar-primary inline-block size-6 rounded-sm" aria-hidden />
+        <span className="font-semibold text-white">Caro Helper</span>
+      </div>
+      <div className="ml-auto">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className="bg-sidebar-primary hover:ring-sidebar-ring flex size-8 items-center justify-center rounded-full text-xs font-semibold text-white hover:ring-2"
+            title={status?.user || "not connected"}
+          >
+            {initials}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="truncate font-normal">
+                {status?.tokenValid ? status.user : "Not connected to Smartsheet"}
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => go("#/settings")}>
+              <Settings className="size-4" /> Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onToggleTheme}>
+              {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+              {theme === "dark" ? "Light mode" : "Dark mode"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </header>
+  )
+}
+
+function SourceRail({ active, settingsActive }: { active: SourceId; settingsActive: boolean }) {
+  return (
+    <nav className="bg-sidebar flex w-12 shrink-0 flex-col items-center gap-1 border-r border-white/10 py-2">
+      {SOURCES.map((s) => {
+        const Icon = s.icon
+        const isActive = !settingsActive && s.id === active
+        return (
+          <button
+            key={s.id}
+            type="button"
+            title={s.ready ? s.label : `${s.label} (coming soon)`}
+            onClick={() => go(`#/${s.id}`)}
+            className={
+              "relative flex size-10 items-center justify-center rounded-sm transition-colors " +
+              (isActive
+                ? "bg-sidebar-accent text-white"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-white") +
+              (s.ready ? "" : " opacity-50")
+            }
+          >
+            {isActive && <span className="bg-sidebar-primary absolute left-0 top-1 h-8 w-0.5 rounded-r" />}
+            <Icon className="size-5" />
+          </button>
+        )
+      })}
+    </nav>
+  )
+}
+
+function SheetPanel({
+  source,
+  sheets,
+  currentId,
+  hidden,
+}: {
+  source: SourceId
+  sheets: SheetAlias[]
+  currentId?: number
+  hidden: boolean
+}) {
+  if (hidden) return null
+  const src = SOURCES.find((s) => s.id === source)!
+  return (
+    <aside className="text-sidebar-foreground flex w-56 shrink-0 flex-col" style={{ backgroundColor: "var(--sidebar-panel)" }}>
+      <div className="px-4 py-3 text-sm font-semibold text-white">{src.label}</div>
+      <div className="flex-1 overflow-auto px-2 pb-2">
+        {source !== "smartsheet" && (
+          <p className="text-sidebar-foreground/60 px-2 text-xs">Not connected yet.</p>
+        )}
+        {source === "smartsheet" && sheets.length === 0 && (
+          <p className="text-sidebar-foreground/60 px-2 text-xs">
+            No sheets yet. Add them under Settings.
+          </p>
+        )}
+        {source === "smartsheet" &&
+          sheets.map((s) => (
+            <PanelItem
+              key={s.sheetId}
+              active={s.sheetId === currentId}
+              icon={<Table2 className="size-3.5 shrink-0 opacity-70" />}
+              onClick={() => go(`#/smartsheet/sheet/${s.sheetId}`)}
+            >
+              {s.alias}
+            </PanelItem>
+          ))}
+      </div>
+    </aside>
+  )
+}
+
+function PanelItem({
   active,
+  icon,
   onClick,
   children,
 }: {
   active: boolean
+  icon?: ReactNode
   onClick: () => void
   children: ReactNode
 }) {
@@ -131,13 +266,34 @@ function NavItem({
       type="button"
       onClick={onClick}
       className={
-        "flex w-full items-center rounded-sm border-l-2 px-3 py-1.5 text-left text-sm transition-colors " +
+        "flex w-full items-center gap-2 rounded-sm border-l-2 px-3 py-1.5 text-left text-sm transition-colors " +
         (active
-          ? "border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground"
+          ? "border-sidebar-primary bg-sidebar-accent text-white"
           : "hover:bg-sidebar-accent/60 border-transparent")
       }
     >
+      {icon}
       <span className="truncate">{children}</span>
     </button>
+  )
+}
+
+function ComingSoon({ source }: { source: SourceId }) {
+  const src = SOURCES.find((s) => s.id === source)!
+  return (
+    <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2">
+      <src.icon className="size-10 opacity-40" />
+      <p className="text-base font-medium">{src.label}</p>
+      <p className="text-xs">This data source is not connected yet.</p>
+    </div>
+  )
+}
+
+function EmptyState({ hasSheets }: { hasSheets: boolean }) {
+  return (
+    <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2">
+      <Grid3x3 className="size-10 opacity-40" />
+      <p className="text-xs">{hasSheets ? "Pick a sheet on the left." : "Add sheets under Settings (avatar menu, top right)."}</p>
+    </div>
   )
 }
