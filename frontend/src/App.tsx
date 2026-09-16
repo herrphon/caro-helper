@@ -124,6 +124,7 @@ export default function App() {
           theme={theme}
           onToggleTheme={toggleTheme}
           onToggleNav={() => setNavOpen((v) => !v)}
+          navOpen={navOpen}
         />
 
         <main className="bg-muted/40 min-w-0 flex-1 overflow-auto p-4">
@@ -150,11 +151,13 @@ function TopBar({
   theme,
   onToggleTheme,
   onToggleNav,
+  navOpen,
 }: {
   status: Status | null
   theme: Theme
   onToggleTheme: () => void
   onToggleNav: () => void
+  navOpen: boolean
 }) {
   const initials = (status?.user ?? "?").slice(0, 2).toUpperCase()
   return (
@@ -163,10 +166,10 @@ function TopBar({
         <button
           type="button"
           onClick={onToggleNav}
-          title="Toggle navigation"
+          title={navOpen ? "Hide navigation" : "Show navigation"}
           className="hover:bg-sidebar-accent flex size-9 items-center justify-center rounded-sm text-white"
         >
-          <Menu className="size-5" />
+          <Menu className={"size-5 transition-transform duration-200 " + (navOpen ? "" : "scale-x-[-1]")} />
         </button>
         <span className="font-semibold text-white">Caro Helper</span>
       </div>
