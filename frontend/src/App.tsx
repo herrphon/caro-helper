@@ -106,26 +106,29 @@ export default function App() {
 
   return (
     <div className="bg-background flex h-screen text-sm">
+      <div className="bg-sidebar flex w-12 shrink-0 flex-col items-center border-r border-white/10">
+        <button
+          type="button"
+          onClick={() => setNavOpen((v) => !v)}
+          title={navOpen ? "Hide navigation" : "Show navigation"}
+          className="hover:bg-sidebar-accent my-1.5 flex size-9 items-center justify-center rounded-sm text-white"
+        >
+          <Menu className={"size-5 " + (navOpen ? "" : "rotate-90")} />
+        </button>
+        {navOpen && <SourceRail active={activeSource} settingsActive={route.page === "settings"} />}
+      </div>
+
       {navOpen && (
-        <>
-          <SourceRail active={activeSource} settingsActive={route.page === "settings"} />
-          <SheetPanel
-            source={activeSource}
-            sheets={sheets}
-            currentId={current?.sheetId}
-            hidden={route.page === "settings"}
-          />
-        </>
+        <SheetPanel
+          source={activeSource}
+          sheets={sheets}
+          currentId={current?.sheetId}
+          hidden={route.page === "settings"}
+        />
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar
-          status={status}
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          onToggleNav={() => setNavOpen((v) => !v)}
-          navOpen={navOpen}
-        />
+        <TopBar status={status} theme={theme} onToggleTheme={toggleTheme} />
 
         <main className="bg-muted/40 min-w-0 flex-1 overflow-auto p-4">
           {loadErr && <p className="text-destructive mb-4">Cannot reach Caro Helper: {loadErr}</p>}
@@ -150,29 +153,15 @@ function TopBar({
   status,
   theme,
   onToggleTheme,
-  onToggleNav,
-  navOpen,
 }: {
   status: Status | null
   theme: Theme
   onToggleTheme: () => void
-  onToggleNav: () => void
-  navOpen: boolean
 }) {
   const initials = (status?.user ?? "?").slice(0, 2).toUpperCase()
   return (
-    <header className="bg-sidebar text-sidebar-foreground flex h-12 shrink-0 items-center px-2">
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onToggleNav}
-          title={navOpen ? "Hide navigation" : "Show navigation"}
-          className="hover:bg-sidebar-accent flex size-9 items-center justify-center rounded-sm text-white"
-        >
-          <Menu className={"size-5 transition-transform duration-200 " + (navOpen ? "" : "rotate-90")} />
-        </button>
-        <span className="font-semibold text-white">Caro Helper</span>
-      </div>
+    <header className="bg-sidebar text-sidebar-foreground flex h-12 shrink-0 items-center px-3">
+      <span className="font-semibold text-white">Caro Helper</span>
       <div className="ml-auto">
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -204,7 +193,7 @@ function TopBar({
 
 function SourceRail({ active, settingsActive }: { active: SourceId; settingsActive: boolean }) {
   return (
-    <nav className="bg-sidebar flex w-12 shrink-0 flex-col items-center gap-1 border-r border-white/10 py-2">
+    <nav className="flex w-full flex-col items-center gap-1 py-1">
       {SOURCES.map((s) => {
         const Icon = s.icon
         const isActive = !settingsActive && s.id === active
