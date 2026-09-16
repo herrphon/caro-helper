@@ -1,6 +1,6 @@
 # Caro Helper - Architecture
 
-Status: prototype (iteration 1). Last updated 2026-09-14.
+Status: prototype (iteration 1, laptop-tested). Last updated 2026-09-16.
 
 ## 1. Purpose and scope
 
@@ -77,6 +77,16 @@ Edge-on-Windows UA (`internal/smartsheet.DefaultUserAgent`), overridable via
 the tool differently from a browser. If that never matters, switching to an
 honest `CaroHelper/x.y` is a one-line change.
 
+**D12 - Smartsheet-like look and multi-source shell.** The UI borrows
+Smartsheet's visual language (brand blue, navy navigation, dense bordered grid
+with row-number gutter, system font) so it feels familiar, without copying logo
+or icons. The shell already anticipates further data sources: an outer icon
+rail lists sources (Smartsheet, SAP Ariba, Excel, two in-house web apps; only
+Smartsheet is wired), an inner panel lists that source's items, a top bar holds
+the avatar menu (account, Settings, Light/Dark). Both navs collapse via a burger
+button that keeps its screen position. Nav state and theme persist in
+`localStorage`.
+
 **D11 - Exploration tool and data hygiene.** `cmd/explore` dumps workspace /
 folder / sheet / report / column structure to `docs/smartsheet-layout.md`.
 Structure only (names, ids, column types), never row contents. The dev token
@@ -89,8 +99,9 @@ reads `.env`.
 +-----------------------------+        +-----------------------------------+
 |  Browser (Edge)             |  HTTP  |  carohelper.exe                   |
 |  React SPA                  | <----> |  internal/server  JSON API + SPA  |
-|  - Settings page            |        |  internal/config  %APPDATA% json  |
+|  - source rail + sheet panel|        |  internal/config  %APPDATA% json  |
 |  - Grid page (search/sort)  |        |  internal/smartsheet REST client  |
+|  - Settings (avatar menu)   |        |                                   |
 +-----------------------------+        +----------------+------------------+
                                                         | HTTPS + Bearer token
                                                         v
@@ -104,7 +115,7 @@ reads `.env`.
 | `internal/smartsheet` | Minimal API client: `Me`, `ListWorkspaces`, `GetWorkspace` (full tree), `GetSheet`, `GetReport`. Pagination, typed errors (`APIError`), report column-id normalisation. `SMARTSHEET_BASE_URL` env override for tests. |
 | `internal/config` | `Store` over `config.json`: sheets/reports aliases, port, user agent, protected token. Platform-specific `protect`/`unprotect` (`protect_windows.go` DPAPI, `protect_other.go` fallback). |
 | `internal/server` | HTTP routes, request logging, error mapping, `SheetView` flattening (hidden columns removed, cells keyed by column id), parallel workspace browse (4 concurrent), SPA fallback handler. |
-| `frontend` | React SPA. `lib/api.ts` typed client; `pages/SettingsPage.tsx` (token, alias list, collapsible workspace tree); `pages/SheetPage.tsx` (grid, live AND-search, sort, copy TSV); `App.tsx` (hash routing, sidebar, dark mode). |
+| `frontend` | React SPA. `lib/api.ts` typed client; `pages/SettingsPage.tsx` (token, alias list, collapsible workspace tree); `pages/SheetPage.tsx` (Smartsheet-style grid, live AND-search, sort, copy TSV); `App.tsx` (hash routing `#/<source>/sheet/<id>`, `#/settings`; source rail, sheet panel, top bar with avatar menu, burger collapse, dark mode). |
 
 ## 5. HTTP API (loopback only)
 
@@ -205,13 +216,14 @@ Full dump: `docs/smartsheet-layout.md`.
 
 ## 10. Roadmap (not committed, in likely order)
 
-1. Laptop verification: SmartScreen behaviour, DPAPI, browser launch, proxy.
-2. Collect Caro's recurring questions; add **predefined queries** (named
+Done: laptop verification (exe runs, token stored via DPAPI, browser opens).
+
+1. Collect Caro's recurring questions; add **predefined queries** (named
    filters on a grid: column/operator/value, initially in config).
-3. Cross-grid PO lookup: type a PO number once, search across all configured
+2. Cross-grid PO lookup: type a PO number once, search across all configured
    reports.
-4. Column chooser and per-user column order; remember last search per grid.
-5. Excel: read local sheets (likely via an `.xlsx` library in Go) and join with
+3. Column chooser and per-user column order; remember last search per grid.
+4. Excel: read local sheets (likely via an `.xlsx` library in Go) and join with
    Smartsheet data.
-6. Ariba and in-house web apps: evaluate APIs vs. export files vs. automation.
-7. Quality of life: tray icon / no console, version display, self-check page.
+5. Ariba and in-house web apps: evaluate APIs vs. export files vs. automation.
+6. Quality of life: tray icon / no console, version display, self-check page.

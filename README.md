@@ -12,16 +12,19 @@ Docs: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (decisions, components, API, 
 1. Copy `carohelper.exe` anywhere (e.g. Desktop). Double-click it.
    A console window opens with log output and the browser opens
    `http://127.0.0.1:8765`. Close the console to stop.
-2. First run: go to **Settings**, paste a Smartsheet token
+2. First run: you land on **Settings** (later: avatar menu, top right). Paste a Smartsheet token
    (Smartsheet: Account -> Personal Settings -> API Access -> Generate).
    The token is checked against Smartsheet, then stored DPAPI-encrypted in
    `%APPDATA%\CaroHelper\config.json`.
 3. **Browse workspaces**, add the sheets or reports you need, give them short names,
-   **Save sheets**. They appear in the sidebar.
-4. Click one: all rows load; the search box filters live across all columns
+   **Save sheets**. They appear in the sheet panel.
+4. Navigation: the narrow left rail selects the data source (Smartsheet active;
+   SAP Ariba, Excel and two web apps are placeholders), the panel next to it
+   lists that source's sheets/reports. The burger button (top left) hides both.
+   Click a sheet: all rows load; the search box filters live across all columns
    (several words = AND), click a header to sort, **Copy for Excel** puts the
-   visible rows on the clipboard as tab-separated text. **Dark mode** toggle is
-   at the bottom of the sidebar.
+   visible rows on the clipboard as tab-separated text. **Light/Dark mode** is in
+   the avatar menu.
 
 Starting point for Caro: `2026 ESC Workspace - BI BC` -> `LEAN MedChem` ->
 add `VERS`, `UFP`, `Forecast`.
