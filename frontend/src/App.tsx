@@ -169,7 +169,7 @@ function TopBar({
           title={navOpen ? "Hide navigation" : "Show navigation"}
           className="hover:bg-sidebar-accent flex size-9 items-center justify-center rounded-sm text-white"
         >
-          <Menu className={"size-5 transition-transform duration-200 " + (navOpen ? "" : "scale-x-[-1]")} />
+          <Menu className={"size-5 transition-transform duration-200 " + (navOpen ? "" : "rotate-90")} />
         </button>
         <span className="font-semibold text-white">Caro Helper</span>
       </div>
