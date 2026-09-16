@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react"
-import { FileSpreadsheet, Grid3x3, Globe, Moon, Settings, ShoppingCart, Sun, Table2 } from "lucide-react"
+import { FileSpreadsheet, Grid3x3, Globe, Menu, Moon, Settings, ShoppingCart, Sun, Table2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,6 +70,8 @@ export default function App() {
   const [route, setRoute] = useState<Route>(parseHash)
   const [loadErr, setLoadErr] = useState<string | null>(null)
   const [theme, toggleTheme] = useTheme()
+  const [navOpen, setNavOpen] = useState(() => localStorage.getItem("navOpen") !== "0")
+  useEffect(() => localStorage.setItem("navOpen", navOpen ? "1" : "0"), [navOpen])
 
   const refresh = useCallback(async () => {
     try {
@@ -103,17 +105,25 @@ export default function App() {
       : undefined
 
   return (
-    <div className="bg-background flex h-screen flex-col text-sm">
-      <TopBar status={status} theme={theme} onToggleTheme={toggleTheme} />
+    <div className="bg-background flex h-screen text-sm">
+      {navOpen && (
+        <>
+          <SourceRail active={activeSource} settingsActive={route.page === "settings"} />
+          <SheetPanel
+            source={activeSource}
+            sheets={sheets}
+            currentId={current?.sheetId}
+            hidden={route.page === "settings"}
+          />
+        </>
+      )}
 
-      <div className="flex min-h-0 flex-1">
-        <SourceRail active={activeSource} settingsActive={route.page === "settings"} />
-
-        <SheetPanel
-          source={activeSource}
-          sheets={sheets}
-          currentId={current?.sheetId}
-          hidden={route.page === "settings"}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TopBar
+          status={status}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onToggleNav={() => setNavOpen((v) => !v)}
         />
 
         <main className="bg-muted/40 min-w-0 flex-1 overflow-auto p-4">
@@ -139,16 +149,25 @@ function TopBar({
   status,
   theme,
   onToggleTheme,
+  onToggleNav,
 }: {
   status: Status | null
   theme: Theme
   onToggleTheme: () => void
+  onToggleNav: () => void
 }) {
   const initials = (status?.user ?? "?").slice(0, 2).toUpperCase()
   return (
-    <header className="bg-sidebar text-sidebar-foreground flex h-12 shrink-0 items-center px-3">
+    <header className="bg-sidebar text-sidebar-foreground flex h-12 shrink-0 items-center px-2">
       <div className="flex items-center gap-2">
-        <span className="bg-sidebar-primary inline-block size-6 rounded-sm" aria-hidden />
+        <button
+          type="button"
+          onClick={onToggleNav}
+          title="Toggle navigation"
+          className="hover:bg-sidebar-accent flex size-9 items-center justify-center rounded-sm text-white"
+        >
+          <Menu className="size-5" />
+        </button>
         <span className="font-semibold text-white">Caro Helper</span>
       </div>
       <div className="ml-auto">
