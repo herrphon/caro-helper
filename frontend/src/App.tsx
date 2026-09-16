@@ -106,29 +106,28 @@ export default function App() {
 
   return (
     <div className="bg-background flex h-screen text-sm">
-      <div className="bg-sidebar flex w-12 shrink-0 flex-col items-center border-r border-white/10">
-        <button
-          type="button"
-          onClick={() => setNavOpen((v) => !v)}
-          title={navOpen ? "Hide navigation" : "Show navigation"}
-          className="hover:bg-sidebar-accent my-1.5 flex size-9 items-center justify-center rounded-sm text-white"
-        >
-          <Menu className={"size-5 " + (navOpen ? "" : "rotate-90")} />
-        </button>
-        {navOpen && <SourceRail active={activeSource} settingsActive={route.page === "settings"} />}
-      </div>
-
       {navOpen && (
-        <SheetPanel
-          source={activeSource}
-          sheets={sheets}
-          currentId={current?.sheetId}
-          hidden={route.page === "settings"}
-        />
+        <>
+          <div className="bg-sidebar flex w-12 shrink-0 flex-col items-center border-r border-white/10">
+            <BurgerButton open onClick={() => setNavOpen(false)} />
+            <SourceRail active={activeSource} settingsActive={route.page === "settings"} />
+          </div>
+          <SheetPanel
+            source={activeSource}
+            sheets={sheets}
+            currentId={current?.sheetId}
+            hidden={route.page === "settings"}
+          />
+        </>
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar status={status} theme={theme} onToggleTheme={toggleTheme} />
+        <TopBar
+          status={status}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          leading={!navOpen && <BurgerButton open={false} onClick={() => setNavOpen(true)} />}
+        />
 
         <main className="bg-muted/40 min-w-0 flex-1 overflow-auto p-4">
           {loadErr && <p className="text-destructive mb-4">Cannot reach Caro Helper: {loadErr}</p>}
@@ -149,19 +148,35 @@ export default function App() {
 
 // --- pieces -------------------------------------------------------------
 
+function BurgerButton({ open, onClick }: { open: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={open ? "Hide navigation" : "Show navigation"}
+      className="hover:bg-sidebar-accent mx-1.5 my-1.5 flex size-9 shrink-0 items-center justify-center rounded-sm text-white"
+    >
+      <Menu className={"size-5 " + (open ? "" : "rotate-90")} />
+    </button>
+  )
+}
+
 function TopBar({
   status,
   theme,
   onToggleTheme,
+  leading,
 }: {
   status: Status | null
   theme: Theme
   onToggleTheme: () => void
+  leading?: ReactNode
 }) {
   const initials = (status?.user ?? "?").slice(0, 2).toUpperCase()
   return (
-    <header className="bg-sidebar text-sidebar-foreground flex h-12 shrink-0 items-center px-3">
-      <span className="font-semibold text-white">Caro Helper</span>
+    <header className="bg-sidebar text-sidebar-foreground flex h-12 shrink-0 items-center pr-3">
+      {leading}
+      <span className={"font-semibold text-white " + (leading ? "" : "pl-3")}>Caro Helper</span>
       <div className="ml-auto">
         <DropdownMenu>
           <DropdownMenuTrigger
