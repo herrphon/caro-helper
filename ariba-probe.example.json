@@ -1,0 +1,11 @@
+{
+  "realmHost": "prod3.procurement.ariba.com",
+  "probeURL": "https://prod3.procurement.ariba.com/REPLACE/with/a/captured/authenticated/xhr",
+  "method": "GET",
+  "headers": {
+    "Accept": "application/json"
+  },
+  "cookieNameFilter": [],
+  "userAgent": "",
+  "edgeProfile": "Default"
+}

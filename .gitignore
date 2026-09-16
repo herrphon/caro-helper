@@ -1,6 +1,8 @@
 # secrets
 .env
 *.token
+# captured Ariba realm host + probe request (per-user, may reveal internal URLs)
+/ariba-probe.json
 
 # build output
 /dist/

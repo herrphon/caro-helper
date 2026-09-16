@@ -1,4 +1,4 @@
-.PHONY: all frontend build build-win explore clean
+.PHONY: all frontend build build-win explore ariba-probe clean
 
 BIN := carohelper
 
@@ -19,6 +19,10 @@ build-win: frontend
 explore:
 	go run ./cmd/explore > docs/smartsheet-layout.md
 	@echo "wrote docs/smartsheet-layout.md"
+
+# Ariba session-replay spike (run on Caro's Windows laptop; needs ariba-probe.json)
+ariba-probe:
+	go run ./cmd/ariba-probe
 
 clean:
 	rm -rf dist frontend/dist cmd/carohelper/dist
