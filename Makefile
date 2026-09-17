@@ -1,4 +1,4 @@
-.PHONY: all frontend build build-win explore ariba-probe clean
+.PHONY: all frontend build build-win explore ariba-probe ariba-probe-win clean
 
 BIN := carohelper
 
@@ -23,6 +23,11 @@ explore:
 # Ariba session-replay spike (run on Caro's Windows laptop; needs ariba-probe.json)
 ariba-probe:
 	go run ./cmd/ariba-probe
+
+# standalone Windows exe of the spike (no Go needed on the target laptop)
+ariba-probe-win:
+	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/ariba-probe.exe ./cmd/ariba-probe
+	@echo "wrote dist/ariba-probe.exe"
 
 clean:
 	rm -rf dist frontend/dist cmd/carohelper/dist
