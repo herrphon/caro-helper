@@ -125,3 +125,17 @@ were not accepted (expired session, missing cookie, or CSRF/UA/IP check).
 - This ADR covers only the spike. Wiring Ariba into the backend source
   abstraction, per-source config, the grid contract, and the frontend rail entry
   are deferred until the probe confirms replay works.
+
+## Dependency note: modernc.org/sqlite Dependabot alerts
+
+Adding `modernc.org/sqlite` (pure-Go, no cgo - needed to read Edge's cookie DB)
+pulls in a large build/codegen dependency tree (`modernc.org/cc`, `ccgo`,
+`libc`, `golang.org/x/tools`). GitHub Dependabot flags advisories against
+packages in that tree.
+
+`govulncheck ./...` reports **no vulnerabilities reachable from our code**: the
+flagged packages are the codegen toolchain behind `libc`, not runtime code any of
+our call paths execute. We accept the alerts for the spike rather than hand-roll a
+SQLite reader. Re-run `govulncheck ./...` before promoting the spike into the
+shipped app; if a reachable vuln appears, either bump the dependency or replace it
+with a minimal Chromium-Cookies-table reader.
